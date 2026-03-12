@@ -645,9 +645,86 @@ img { display: block; max-width: 100%; }
   .footer { padding: 22px; }
   .hero-main h1 { letter-spacing: -1.2px; }
 }
+
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at center, rgba(13,106,191,0.12), rgba(12,23,38,0.96));
+  transition: opacity 0.7s ease, visibility 0.7s ease;
+}
+
+.intro-overlay.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.intro-video-shell {
+  width: min(520px, calc(100vw - 36px));
+  padding: 18px;
+  border-radius: 28px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.34);
+  backdrop-filter: blur(14px);
+}
+
+.intro-video {
+  width: 100%;
+  display: block;
+  border-radius: 20px;
+  background: #08111e;
+}
+
+.intro-copy {
+  margin-top: 14px;
+  text-align: center;
+  color: rgba(255,255,255,0.86);
+}
+
+.intro-copy strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.intro-copy span {
+  font-size: 12px;
+  letter-spacing: 0.4px;
+}
+
+.intro-skip {
+  margin-top: 14px;
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
 </style>
 </head>
 <body>
+<div class="intro-overlay" id="introOverlay">
+  <div class="intro-video-shell">
+    <video class="intro-video" id="introVideo" autoplay muted playsinline preload="auto">
+      <source src="intro-logo.mp4" type="video/mp4">
+    </video>
+    <div class="intro-copy">
+      <strong>Fire Monitoring Platform</strong>
+      <span>Intro logo animation</span>
+    </div>
+    <button class="intro-skip" id="introSkip" type="button">Skip Intro</button>
+  </div>
+</div>
 <div class="page">
   <header class="topbar">
     <a class="brand" href="#top">
@@ -1035,8 +1112,44 @@ img { display: block; max-width: 100%; }
     <a class="btn btn-secondary" href="#top">Back to top</a>
   </footer>
 </div>
+<script>
+(function () {
+  const overlay = document.getElementById('introOverlay');
+  const video = document.getElementById('introVideo');
+  const skip = document.getElementById('introSkip');
+
+  if (!overlay || !video) {
+    return;
+  }
+
+  let closed = false;
+
+  function closeIntro() {
+    if (closed) return;
+    closed = true;
+    overlay.classList.add('is-hidden');
+    window.setTimeout(() => {
+      overlay.remove();
+    }, 800);
+  }
+
+  video.addEventListener('ended', closeIntro);
+  video.addEventListener('error', closeIntro);
+  skip.addEventListener('click', closeIntro);
+
+  const playPromise = video.play();
+  if (playPromise && typeof playPromise.catch === 'function') {
+    playPromise.catch(() => {
+      window.setTimeout(closeIntro, 1800);
+    });
+  }
+
+  window.setTimeout(closeIntro, 9000);
+})();
+</script>
 </body>
 </html>
+
 
 
 
