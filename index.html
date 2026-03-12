@@ -652,8 +652,10 @@ img { display: block; max-width: 100%; }
   z-index: 9999;
   display: grid;
   place-items: center;
-  background: radial-gradient(circle at center, rgba(13,106,191,0.12), rgba(12,23,38,0.96));
-  transition: opacity 0.7s ease, visibility 0.7s ease;
+  background:
+    radial-gradient(circle at center, rgba(76,190,255,0.10), transparent 24%),
+    linear-gradient(180deg, rgba(8,17,30,0.90), rgba(8,17,30,0.98));
+  transition: opacity 0.8s ease, visibility 0.8s ease;
 }
 
 .intro-overlay.is-hidden {
@@ -662,53 +664,58 @@ img { display: block; max-width: 100%; }
   pointer-events: none;
 }
 
+.intro-overlay.is-ending .intro-video-shell {
+  transform: scale(1.08);
+  opacity: 0;
+}
+
 .intro-video-shell {
-  width: min(520px, calc(100vw - 36px));
-  padding: 18px;
-  border-radius: 28px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.14);
-  box-shadow: 0 30px 80px rgba(0,0,0,0.34);
-  backdrop-filter: blur(14px);
+  position: relative;
+  width: min(420px, calc(100vw - 56px));
+  transition: transform 0.95s ease, opacity 0.95s ease;
 }
 
 .intro-video {
   width: 100%;
   display: block;
-  border-radius: 20px;
-  background: #08111e;
+  background: transparent;
+  filter: drop-shadow(0 28px 60px rgba(0,0,0,0.32));
 }
 
-.intro-copy {
-  margin-top: 14px;
+.intro-brand {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   text-align: center;
-  color: rgba(255,255,255,0.86);
+  pointer-events: none;
+  opacity: 0;
+  animation: introBrandReveal 1.6s ease forwards;
+  animation-delay: 0.35s;
 }
 
-.intro-copy strong {
+.intro-brand strong {
   display: block;
-  margin-bottom: 4px;
-  font-size: 15px;
+  color: #ffffff;
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1.02;
+  letter-spacing: -1.2px;
+  text-shadow: 0 10px 30px rgba(0,0,0,0.35);
 }
 
-.intro-copy span {
+.intro-brand span {
+  display: block;
+  margin-top: 8px;
+  color: rgba(255,255,255,0.68);
   font-size: 12px;
-  letter-spacing: 0.4px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
-.intro-skip {
-  margin-top: 14px;
-  width: 100%;
-  min-height: 44px;
-  border: 1px solid rgba(255,255,255,0.16);
-  border-radius: 999px;
-  background: rgba(255,255,255,0.1);
-  color: #fff;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  cursor: pointer;
+@keyframes introBrandReveal {
+  0% { opacity: 0; transform: translate(-50%, -46%); }
+  100% { opacity: 1; transform: translate(-50%, -50%); }
 }
 </style>
 </head>
@@ -718,11 +725,10 @@ img { display: block; max-width: 100%; }
     <video class="intro-video" id="introVideo" autoplay muted playsinline preload="auto">
       <source src="intro-logo.mp4" type="video/mp4">
     </video>
-    <div class="intro-copy">
-      <strong>Fire Monitoring Platform</strong>
-      <span>Intro logo animation</span>
+    <div class="intro-brand" aria-hidden="true">
+      <strong>Fire Monitoring<br>Platform</strong>
+      <span>Defend with the hearth</span>
     </div>
-    <button class="intro-skip" id="introSkip" type="button">Skip Intro</button>
   </div>
 </div>
 <div class="page">
@@ -1116,9 +1122,14 @@ img { display: block; max-width: 100%; }
 (function () {
   const overlay = document.getElementById('introOverlay');
   const video = document.getElementById('introVideo');
-  const skip = document.getElementById('introSkip');
+  const seenKey = 'fire-monitoring-intro-seen';
 
   if (!overlay || !video) {
+    return;
+  }
+
+  if (window.localStorage.getItem(seenKey) === 'true') {
+    overlay.remove();
     return;
   }
 
@@ -1127,28 +1138,33 @@ img { display: block; max-width: 100%; }
   function closeIntro() {
     if (closed) return;
     closed = true;
-    overlay.classList.add('is-hidden');
+    window.localStorage.setItem(seenKey, 'true');
+    overlay.classList.add('is-ending');
+    window.setTimeout(() => {
+      overlay.classList.add('is-hidden');
+    }, 260);
     window.setTimeout(() => {
       overlay.remove();
-    }, 800);
+    }, 1200);
   }
 
   video.addEventListener('ended', closeIntro);
   video.addEventListener('error', closeIntro);
-  skip.addEventListener('click', closeIntro);
+  video.addEventListener('click', closeIntro);
 
   const playPromise = video.play();
   if (playPromise && typeof playPromise.catch === 'function') {
     playPromise.catch(() => {
-      window.setTimeout(closeIntro, 1800);
+      window.setTimeout(closeIntro, 2200);
     });
   }
 
-  window.setTimeout(closeIntro, 9000);
+  window.setTimeout(closeIntro, 8000);
 })();
 </script>
 </body>
 </html>
+
 
 
 
