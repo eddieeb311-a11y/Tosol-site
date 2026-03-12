@@ -766,10 +766,10 @@ img { display: block; max-width: 100%; }
 
   <section class="hero">
     <div class="panel hero-main" id="top">
-      <div class="kicker">Premium Monitoring Website</div>
-      <h1>LoRaWAN-based fire monitoring solution designed to look like a real company website.</h1>
+      <div class="kicker">LoRaWAN FACP Monitoring Platform</div>
+      <h1>FACP-аас ОБЕГ руу LoRaWAN-аар автомат мэдэгдэл дамжуулах галын хяналтын шийдэл.</h1>
       <p>
-        Энэ хувилбар дээр бүх хуучин сургуулийн нэршлийг авч хаяж, оронд нь илүү premium, байгууллагын нүүр хуудас шиг мэдрэмжтэй бүтэц орууллаа. Одоо та logo, багийн нэр, зураг, screenshot, холбоо барих мэдээллээ солиод шууд company homepage шиг ашиглаж болно.
+        Энэхүү систем нь Fire Alarm Control Panel (FACP)-аас үүссэн дохиог LoRaWAN сүлжээгээр gateway болон server тал руу дамжуулж, цааш Telegram, Grafana зэрэг хяналтын сувгуудаар шуурхай мэдэгдэл хүргэхэд чиглэнэ. Улаанбаатар хотын гэр хороолол, бага давхар барилга, агуулах, үйлдвэрийн бүсэд өртөг багатай, хол зайн, автомат галын мэдээллийн дэд бүтэц бүрдүүлэх зорилготой.
       </p>
       <div class="actions">
         <a class="btn btn-primary" href="#contact">Холбоо барих</a>
@@ -1077,14 +1077,8 @@ img { display: block; max-width: 100%; }
 (function () {
   const overlay = document.getElementById('introOverlay');
   const video = document.getElementById('introVideo');
-  const seenKey = 'fire-monitoring-intro-seen';
 
   if (!overlay || !video) {
-    return;
-  }
-
-  if (window.localStorage.getItem(seenKey) === 'true') {
-    overlay.remove();
     return;
   }
 
@@ -1093,7 +1087,6 @@ img { display: block; max-width: 100%; }
   function closeIntro() {
     if (closed) return;
     closed = true;
-    window.localStorage.setItem(seenKey, 'true');
     overlay.classList.add('is-ending');
     window.setTimeout(() => {
       overlay.classList.add('is-hidden');
@@ -1103,6 +1096,7 @@ img { display: block; max-width: 100%; }
     }, 1200);
   }
 
+  video.currentTime = 0;
   video.addEventListener('ended', closeIntro);
   video.addEventListener('error', closeIntro);
   video.addEventListener('click', closeIntro);
@@ -1119,6 +1113,8 @@ img { display: block; max-width: 100%; }
 </script>
 </body>
 </html>
+
+
 
 
 
