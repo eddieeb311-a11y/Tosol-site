@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: fire-lora-server
+    runtime: node
+    rootDir: b_gAL7vFzxSzt
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
