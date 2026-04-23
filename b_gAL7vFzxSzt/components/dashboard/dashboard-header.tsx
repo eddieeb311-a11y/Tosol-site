@@ -12,12 +12,16 @@ import {
   ShieldAlert
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { mockIncidents } from '@/lib/mock-data'
+import type { Incident } from '@/lib/types'
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  incidents: Incident[]
+}
+
+export function DashboardHeader({ incidents }: DashboardHeaderProps) {
   const [currentTime, setCurrentTime] = useState(new Date())
-  const activeCount = mockIncidents.filter(i => i.status === 'active').length
-  const totalCount = mockIncidents.length
+  const activeCount = incidents.filter(i => i.status === 'active').length
+  const totalCount = incidents.length
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)

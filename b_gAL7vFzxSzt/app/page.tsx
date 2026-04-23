@@ -1,18 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { Navigation } from 'lucide-react'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { IncidentQueue } from '@/components/dashboard/incident-queue'
 import { IncidentDetails } from '@/components/dashboard/incident-details'
 import { SignalIndicator } from '@/components/dashboard/signal-indicator'
-import { mockIncidents, mockResponsePoints, mockGateway } from '@/lib/mock-data'
+import { mockIncidents, mockResponsePoints, mockGateway, createTestIncident } from '@/lib/mock-data'
+import type { Incident } from '@/lib/types'
 
-// Dynamic import for map to avoid SSR issues with Leaflet
 const ResponseMap = dynamic(
   () => import('@/components/dashboard/response-map').then(mod => mod.ResponseMap),
-  { 
+  {
     ssr: false,
     loading: () => (
       <div className="flex h-full w-full items-center justify-center bg-[oklch(0.1_0.005_260)]">
@@ -26,51 +26,63 @@ const ResponseMap = dynamic(
 )
 
 export default function EmergencyDashboard() {
+  const [incidents, setIncidents] = useState<Incident[]>(mockIncidents)
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(
     mockIncidents[0]?.id || null
   )
 
-  const selectedIncident = mockIncidents.find(i => i.id === selectedIncidentId) || null
+  const selectedIncident = incidents.find(i => i.id === selectedIncidentId) || null
   const nearestResponse = mockResponsePoints.find(r => r.isNearest) || null
 
-  const handleAcknowledge = () => {
-    // In a real app, this would update the incident status
-    console.log('[v0] Acknowledging incident:', selectedIncidentId)
-  }
+  const handleAcknowledge = useCallback(() => {
+    if (!selectedIncidentId) return
+    setIncidents(prev => prev.map(i =>
+      i.id === selectedIncidentId && i.status === 'active'
+        ? { ...i, status: 'acknowledged', timeAcknowledged: new Date() }
+        : i
+    ))
+  }, [selectedIncidentId])
 
-  const handleEscalate = () => {
-    // In a real app, this would escalate the incident
-    console.log('[v0] Escalating incident:', selectedIncidentId)
-  }
+  const handleEscalate = useCallback(() => {
+    if (!selectedIncidentId) return
+    setIncidents(prev => {
+      const updated = prev.map(i =>
+        i.id === selectedIncidentId ? { ...i, status: 'resolved' as const } : i
+      )
+      const next = updated.find(i => i.id !== selectedIncidentId && i.status === 'active')
+      if (next) setSelectedIncidentId(next.id)
+      return updated
+    })
+  }, [selectedIncidentId])
+
+  const handleTestAlarm = useCallback(() => {
+    const newIncident = createTestIncident()
+    setIncidents(prev => [newIncident, ...prev])
+    setSelectedIncidentId(newIncident.id)
+  }, [])
 
   return (
     <div className="flex h-screen flex-col bg-background">
-      {/* Header */}
-      <DashboardHeader />
+      <DashboardHeader incidents={incidents} />
 
-      {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar - Incident Queue */}
         <aside className="w-80 flex-shrink-0 border-r border-border overflow-hidden">
           <IncidentQueue
-            incidents={mockIncidents}
+            incidents={incidents}
             selectedId={selectedIncidentId}
             onSelect={setSelectedIncidentId}
           />
         </aside>
 
-        {/* Center - Map */}
         <main className="relative flex-1 overflow-hidden">
           <ResponseMap
             incident={selectedIncident}
             responsePoints={mockResponsePoints}
             gateway={mockGateway}
           />
-          
-          {/* Signal Path Indicator */}
+
           <SignalIndicator isActive={!!selectedIncident} />
 
-          {/* Operational Status Banner */}
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]">
             {selectedIncident && nearestResponse ? (
               <div className="rounded-lg bg-card/95 px-5 py-2.5 backdrop-blur-sm border border-[var(--alert-critical)]/40 shadow-lg flex items-center gap-3">
@@ -97,9 +109,18 @@ export default function EmergencyDashboard() {
               </div>
             )}
           </div>
+
+          {/* Test alarm button */}
+          <div className="absolute bottom-4 right-4 z-[1000]">
+            <button
+              onClick={handleTestAlarm}
+              className="rounded-lg bg-card/95 border border-[var(--warning-amber)]/50 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-[var(--warning-amber)] hover:bg-[var(--warning-amber)]/10 backdrop-blur-sm transition-colors"
+            >
+              ⚡ Туршилтын Дохио
+            </button>
+          </div>
         </main>
 
-        {/* Right Panel - Incident Details */}
         <aside className="w-96 flex-shrink-0 border-l border-border overflow-hidden">
           <IncidentDetails
             incident={selectedIncident}
