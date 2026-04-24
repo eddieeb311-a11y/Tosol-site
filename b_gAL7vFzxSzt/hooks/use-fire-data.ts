@@ -15,7 +15,7 @@ function eventToIncident(event: any): Incident {
       : 'medium'
 
   return {
-    id: `${event.deviceId}-${event.sequence ?? now}`,
+    id: `${event.deviceId}-${now}`,
     priority,
     status: 'active',
     building: loc.building || event.deviceId,
@@ -105,11 +105,10 @@ export function useFireData() {
           }
 
           if (event.alarm && event.eventType === 'alarm') {
-            // New alarm — add to incidents
+            // New alarm — өмнөх device-н incident-г устгаад шинэ нэмнэ
             const incident = eventToIncident(event)
             setIncidents(prev => {
-              // Replace if same device already has active alarm
-              const filtered = prev.filter(i => !i.id.startsWith(event.deviceId + '-') || i.status !== 'active')
+              const filtered = prev.filter(i => !i.id.startsWith(event.deviceId + '-'))
               return [incident, ...filtered]
             })
           } else if (event.eventType === 'heartbeat' && !event.alarm) {
