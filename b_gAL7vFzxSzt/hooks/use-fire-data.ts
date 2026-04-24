@@ -35,7 +35,10 @@ function eventToIncident(event: any): Incident {
 
 export function useFireData() {
   const [incidents, setIncidents] = useState<Incident[]>([])
-  const [gateway, setGateway] = useState<Gateway>(mockGateway)
+  const [gateway, setGateway] = useState<Gateway>({
+    ...mockGateway,
+    lastHeartbeat: new Date(0), // SSR-safe: hydration зөрөхгүй
+  })
   const [connected, setConnected] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null)
