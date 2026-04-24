@@ -15,7 +15,7 @@ function eventToIncident(event: any): Incident {
       : 'medium'
 
   return {
-    id: `${event.deviceId}-${now}`,
+    id: event.deviceId,  // нэг device = нэг incident
     priority,
     status: 'active',
     building: loc.building || event.deviceId,
@@ -65,7 +65,7 @@ export function useFireData() {
           const activeIncidents: Incident[] = []
           for (const device of Object.values(data.devices ?? {}) as any[]) {
             if (device.alarm) {
-              activeIncidents.push(eventToIncident({
+              const inc = eventToIncident({
                 deviceId: device.deviceId,
                 eventTypeCode: 1,
                 sourceCode: device.source === 'facp' ? 1 : 2,
@@ -73,7 +73,9 @@ export function useFireData() {
                 sequence: device.sequence,
                 timestamp: device.lastSeen ? new Date(device.lastSeen).toISOString() : new Date().toISOString(),
                 location: device.location,
-              }))
+              })
+              inc.id = device.deviceId  // device ID ашиглана
+              activeIncidents.push(inc)
             }
           }
           setIncidents(activeIncidents)
@@ -107,17 +109,17 @@ export function useFireData() {
           }
 
           if (event.alarm && event.eventType === 'alarm') {
-            // New alarm — өмнөх device-н incident-г устгаад шинэ нэмнэ
             const incident = eventToIncident(event)
             setIncidents(prev => {
-              const filtered = prev.filter(i => !i.id.startsWith(event.deviceId + '-'))
+              // device ID-р хайж устгаад шинэ нэмнэ
+              const filtered = prev.filter(i => i.id !== event.deviceId)
               return [incident, ...filtered]
             })
-          } else if (event.eventType === 'heartbeat' && !event.alarm) {
-            // Alarm cleared — resolve that device's incidents
+          } else if (!event.alarm) {
+            // Alarm унтарсан — active incident-г resolve болгоно
             setIncidents(prev =>
               prev.map(i =>
-                i.id.startsWith(event.deviceId + '-') && i.status === 'active'
+                i.id === event.deviceId && i.status === 'active'
                   ? { ...i, status: 'resolved' as const }
                   : i
               )
