@@ -44,7 +44,8 @@ export function useFireData() {
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return
+    const state = wsRef.current?.readyState
+    if (state === WebSocket.OPEN || state === WebSocket.CONNECTING) return
 
     const ws = new WebSocket(WS_URL)
     wsRef.current = ws
@@ -57,6 +58,7 @@ export function useFireData() {
     ws.onmessage = (msg) => {
       try {
         const data = JSON.parse(msg.data)
+        console.log('[WS] msg:', data.type, data.event?.eventType, 'alarm:', data.event?.alarm)
 
         if (data.type === 'init') {
           // Server restart — rebuild active alarms from devices
