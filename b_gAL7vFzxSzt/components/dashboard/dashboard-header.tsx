@@ -16,9 +16,10 @@ import type { Incident } from '@/lib/types'
 
 interface DashboardHeaderProps {
   incidents: Incident[]
+  connected?: boolean
 }
 
-export function DashboardHeader({ incidents }: DashboardHeaderProps) {
+export function DashboardHeader({ incidents, connected = false }: DashboardHeaderProps) {
   const [currentTime, setCurrentTime] = useState(new Date())
   const activeCount = incidents.filter(i => i.status === 'active').length
   const totalCount = incidents.length
@@ -62,8 +63,10 @@ export function DashboardHeader({ incidents }: DashboardHeaderProps) {
         </div>
         <div className="h-4 w-px bg-border" />
         <div className="flex items-center gap-2">
-          <Wifi className="h-4 w-4 text-[var(--status-online)]" />
-          <span className="text-xs font-medium text-muted-foreground">LoRaWAN Холбоо</span>
+          <Wifi className={connected ? "h-4 w-4 text-[var(--status-online)]" : "h-4 w-4 text-muted-foreground"} />
+          <span className={connected ? "text-xs font-medium text-[var(--status-online)]" : "text-xs font-medium text-muted-foreground"}>
+            {connected ? 'LoRaWAN Холбоо' : 'Холбогдож байна...'}
+          </span>
         </div>
       </div>
 

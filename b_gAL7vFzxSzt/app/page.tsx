@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Navigation } from 'lucide-react'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { IncidentQueue } from '@/components/dashboard/incident-queue'
 import { IncidentDetails } from '@/components/dashboard/incident-details'
 import { SignalIndicator } from '@/components/dashboard/signal-indicator'
-import { mockIncidents, mockResponsePoints, mockGateway, createTestIncident } from '@/lib/mock-data'
-import type { Incident } from '@/lib/types'
+import { mockResponsePoints } from '@/lib/mock-data'
+import { useFireData } from '@/hooks/use-fire-data'
 
 const ResponseMap = dynamic(
   () => import('@/components/dashboard/response-map').then(mod => mod.ResponseMap),
@@ -26,50 +26,39 @@ const ResponseMap = dynamic(
 )
 
 export default function EmergencyDashboard() {
-  const [incidents, setIncidents] = useState<Incident[]>(mockIncidents)
-  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(
-    mockIncidents[0]?.id || null
-  )
+  const { incidents, gateway, connected, acknowledge, resolve, addTestIncident } = useFireData()
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null)
 
-  const selectedIncident = incidents.find(i => i.id === selectedIncidentId) || null
+  // Auto-select first active incident
+  const activeIncidents = incidents.filter(i => i.status === 'active')
+  const effectiveSelectedId = selectedIncidentId && incidents.find(i => i.id === selectedIncidentId)
+    ? selectedIncidentId
+    : (activeIncidents[0]?.id ?? incidents[0]?.id ?? null)
+
+  const selectedIncident = incidents.find(i => i.id === effectiveSelectedId) || null
   const nearestResponse = mockResponsePoints.find(r => r.isNearest) || null
 
-  const handleAcknowledge = useCallback(() => {
-    if (!selectedIncidentId) return
-    setIncidents(prev => prev.map(i =>
-      i.id === selectedIncidentId && i.status === 'active'
-        ? { ...i, status: 'acknowledged', timeAcknowledged: new Date() }
-        : i
-    ))
-  }, [selectedIncidentId])
+  const handleAcknowledge = () => {
+    if (effectiveSelectedId) acknowledge(effectiveSelectedId)
+  }
 
-  const handleEscalate = useCallback(() => {
-    if (!selectedIncidentId) return
-    setIncidents(prev => {
-      const updated = prev.map(i =>
-        i.id === selectedIncidentId ? { ...i, status: 'resolved' as const } : i
-      )
-      const next = updated.find(i => i.id !== selectedIncidentId && i.status === 'active')
+  const handleEscalate = () => {
+    if (effectiveSelectedId) {
+      resolve(effectiveSelectedId)
+      const next = incidents.find(i => i.id !== effectiveSelectedId && i.status === 'active')
       if (next) setSelectedIncidentId(next.id)
-      return updated
-    })
-  }, [selectedIncidentId])
-
-  const handleTestAlarm = useCallback(() => {
-    const newIncident = createTestIncident()
-    setIncidents(prev => [newIncident, ...prev])
-    setSelectedIncidentId(newIncident.id)
-  }, [])
+    }
+  }
 
   return (
     <div className="flex h-screen flex-col bg-background">
-      <DashboardHeader incidents={incidents} />
+      <DashboardHeader incidents={incidents} connected={connected} />
 
       <div className="flex flex-1 overflow-hidden">
         <aside className="w-80 flex-shrink-0 border-r border-border overflow-hidden">
           <IncidentQueue
             incidents={incidents}
-            selectedId={selectedIncidentId}
+            selectedId={effectiveSelectedId}
             onSelect={setSelectedIncidentId}
           />
         </aside>
@@ -78,7 +67,7 @@ export default function EmergencyDashboard() {
           <ResponseMap
             incident={selectedIncident}
             responsePoints={mockResponsePoints}
-            gateway={mockGateway}
+            gateway={gateway}
           />
 
           <SignalIndicator isActive={!!selectedIncident} />
@@ -92,9 +81,7 @@ export default function EmergencyDashboard() {
                 </span>
                 <span className="h-3.5 w-px bg-border" />
                 <Navigation className="h-3 w-3 text-[var(--status-online)]" />
-                <span className="text-xs font-medium text-foreground">
-                  {nearestResponse.name}
-                </span>
+                <span className="text-xs font-medium text-foreground">{nearestResponse.name}</span>
                 <span className="text-xs text-muted-foreground">томилогдсон</span>
                 <span className="h-3.5 w-px bg-border" />
                 <span className="font-mono text-sm font-bold text-[var(--status-online)]">
@@ -104,16 +91,16 @@ export default function EmergencyDashboard() {
             ) : (
               <div className="rounded-lg bg-card/95 px-4 py-2 backdrop-blur-sm border border-border shadow-lg">
                 <p className="text-xs font-medium text-muted-foreground">
-                  Идэвхтэй осол байхгүй — Систем хянаж байна
+                  {connected ? 'Идэвхтэй осол байхгүй — Систем хянаж байна' : 'Серверт холбогдож байна...'}
                 </p>
               </div>
             )}
           </div>
 
-          {/* Test alarm button */}
+          {/* Test button */}
           <div className="absolute bottom-4 right-4 z-[1000]">
             <button
-              onClick={handleTestAlarm}
+              onClick={addTestIncident}
               className="rounded-lg bg-card/95 border border-[var(--warning-amber)]/50 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-[var(--warning-amber)] hover:bg-[var(--warning-amber)]/10 backdrop-blur-sm transition-colors"
             >
               ⚡ Туршилтын Дохио
@@ -125,7 +112,7 @@ export default function EmergencyDashboard() {
           <IncidentDetails
             incident={selectedIncident}
             nearestResponse={nearestResponse}
-            gateway={mockGateway}
+            gateway={gateway}
             onAcknowledge={handleAcknowledge}
             onEscalate={handleEscalate}
           />
