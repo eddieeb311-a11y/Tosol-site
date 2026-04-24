@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { Navigation } from 'lucide-react'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
@@ -27,8 +27,17 @@ const ResponseMap = dynamic(
 )
 
 export default function EmergencyDashboard() {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
   const { incidents, gateway, connected, acknowledge, resolve, addTestIncident } = useFireData()
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null)
+
+  if (!mounted) return (
+    <div className="flex h-screen items-center justify-center bg-background">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--signal-blue)] border-t-transparent" />
+    </div>
+  )
 
   const hasActiveAlarm = incidents.some(i => i.status === 'active')
   useSiren(hasActiveAlarm)
