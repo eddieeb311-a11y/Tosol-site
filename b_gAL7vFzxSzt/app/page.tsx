@@ -9,6 +9,7 @@ import { IncidentDetails } from '@/components/dashboard/incident-details'
 import { SignalIndicator } from '@/components/dashboard/signal-indicator'
 import { mockResponsePoints } from '@/lib/mock-data'
 import { useFireData } from '@/hooks/use-fire-data'
+import { useSiren } from '@/hooks/use-siren'
 
 const ResponseMap = dynamic(
   () => import('@/components/dashboard/response-map').then(mod => mod.ResponseMap),
@@ -28,6 +29,9 @@ const ResponseMap = dynamic(
 export default function EmergencyDashboard() {
   const { incidents, gateway, connected, acknowledge, resolve, addTestIncident } = useFireData()
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null)
+
+  const hasActiveAlarm = incidents.some(i => i.status === 'active')
+  useSiren(hasActiveAlarm)
 
   // Auto-select first active incident
   const activeIncidents = incidents.filter(i => i.status === 'active')
